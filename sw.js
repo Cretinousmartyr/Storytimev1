@@ -1,24 +1,26 @@
-const cacheName = 'cloud-adventure-cache-v1';
+const cacheName = 'sky-adventure-cache-v1';
 const assetsToCache = [
   './index.html',
   './manifest.json',
   './sw.js'
-  // Add additional assets (e.g., icon files) here.
+  // Add any additional assets (icons, images, etc.) here
 ];
 
-self.addEventListener('install', event => {
+self.addEventListener('install', function(event) {
   event.waitUntil(
     caches.open(cacheName)
-      .then(cache => {
+      .then(function(cache) {
         console.log('Opened cache');
         return cache.addAll(assetsToCache);
       })
   );
 });
 
-self.addEventListener('fetch', event => {
+self.addEventListener('fetch', function(event) {
   event.respondWith(
     caches.match(event.request)
-      .then(response => response || fetch(event.request))
+      .then(function(response) {
+        return response || fetch(event.request);
+      })
   );
 });
