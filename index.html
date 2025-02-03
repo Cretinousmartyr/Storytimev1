@@ -2,138 +2,292 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flying Unicorn Adventure</title>
+  <title>Magical Cloud Adventure</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Link to the manifest file for PWA installability -->
+  <!-- Link the manifest for PWA installability -->
   <link rel="manifest" href="manifest.json">
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f9f9f9;
+      background: #fff;
       padding: 20px;
       max-width: 800px;
       margin: auto;
       line-height: 1.6;
+      color: #333;
     }
     p {
       font-size: 18px;
     }
     button {
       padding: 10px 20px;
-      margin: 10px 5px 0 0;
+      margin: 5px;
       font-size: 16px;
       cursor: pointer;
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+    }
+    /* A smaller “microphone” button for reading an option aloud */
+    button.mic {
+      background: #c0392b;
+      font-size: 14px;
+      padding: 5px 10px;
+      margin-left: 5px;
     }
     input[type="text"] {
       padding: 10px;
       font-size: 16px;
       margin-right: 10px;
     }
+    #repeatBtn {
+      background: #3498db;
+      margin-bottom: 20px;
+    }
+    .choice-container {
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
   <div id="game"></div>
-
   <script>
-    // Global state: tracks player name and which islands have been visited
+    // Global state (tracking the adventurer's name and progress on each island)
     const state = {
       playerName: "",
-      helpedIslandA: false,
-      helpedIslandB: false,
+      rabbits: {
+        puzzle: false,
+        rainbow: false,
+        garden: false,
+        festival: false
+      },
+      cats: {
+        chase: false,
+        secret: false,
+        rescue: false,
+        festival: false
+      }
     };
 
-    // Story scenes and branching paths
+    // To store the current scene text for repeat narration
+    let currentSceneText = "";
+
+    // Story scenes definition
     const scenes = {
-      // Starting scene: get the player's name
+      // START & INTRO
       start: {
         id: "start",
-        text: "Welcome, adventurer! Please enter your name to begin:",
+        text: "Welcome, adventurer! Please enter your name to begin your journey:",
         input: true,
         next: "intro"
       },
-      // The introductory narrative
       intro: {
         id: "intro",
-        text: "Once upon a time, there was a brave girl named {playerName}. One day, while wandering through a mystical forest, {playerName} discovered a glowing, flying unicorn! The unicorn beckoned {playerName} to join an incredible adventure. Do you accept the invitation?",
+        text: "Once upon a time, a brave adventurer named {playerName} encountered a glowing, flying unicorn in a magical forest. The unicorn invites you on a journey to explore two enchanting islands among the clouds. Do you accept?",
         choices: [
-          { text: "Yes, I accept!", next: "chooseIsland" },
-          { text: "No, I'm not ready.", next: "decline" }
+          { text: "Yes, let’s begin!", next: "chooseIsland" },
+          { text: "No, not now.", next: "decline" }
         ]
       },
       decline: {
         id: "decline",
-        text: "{playerName} decided that adventures could wait for another day. But a gentle whisper in the wind reminded her that sometimes magic waits for those who dare to dream. Perhaps next time.",
+        text: "Perhaps another day, {playerName}. The magic will be here waiting for you.",
         choices: [
           { text: "Restart Adventure", next: "start" }
         ]
       },
-      // Choose which island to visit
       chooseIsland: {
         id: "chooseIsland",
-        text: "{playerName} rides high above the clouds on the unicorn. Before you lie two magical islands floating in the sky. One island is home to a friendly group of Rainbow Rabbits who need help, and the other is inhabited by wise Cloud Cats facing a mysterious challenge. Which island do you visit first?",
+        text: "Soaring high on the unicorn, you see two islands: Rainbow Rabbits Island and Cloud Cats Island. Which one will you explore first?",
         choices: [
-          { text: "Visit the Rainbow Rabbits Island", next: "islandA" },
-          { text: "Visit the Cloud Cats Island", next: "islandB" }
+          { text: "Visit Rainbow Rabbits Island", next: "islandRabbits_intro" },
+          { text: "Visit Cloud Cats Island", next: "islandCats_intro" }
         ]
       },
-      // Rainbow Rabbits Island branch
-      islandA: {
-        id: "islandA",
-        text: "On Rainbow Rabbits Island, {playerName} meets a community of colorful rabbits. Their magical prism that powers their rainbows has dimmed. With your help, they set off on a quest to recover a lost gem that will restore the prism’s brilliance. After overcoming playful puzzles and little challenges, the gem is recovered and the rainbows burst forth in dazzling color. The rabbits cheer, and a wise elder proclaims, 'Thank you, {playerName}! Your courage has brightened our world.'",
+      
+      // –––––––––––––––––––––––––––––––––––––––––––––––
+      // Rainbow Rabbits Island Branch
+      // –––––––––––––––––––––––––––––––––––––––––––––––
+      islandRabbits_intro: {
+        id: "islandRabbits_intro",
+        text: "Welcome to Rainbow Rabbits Island! The colorful rabbits await your help. What will you do first?",
         choices: [
-          { text: "Return to the Clouds", next: "afterIslandA" }
-        ],
-        onEnter: function() {
-          state.helpedIslandA = true;
-        }
-      },
-      afterIslandA: {
-        id: "afterIslandA",
-        text: "Floating back on the unicorn, {playerName} reflects on the warm gratitude of the Rainbow Rabbits. But there is still more to discover among the clouds.",
-        choices: [
-          { text: "Visit the Cloud Cats Island", next: "islandB", condition: function(){ return !state.helpedIslandB; } },
-          { text: "Revisit Rainbow Rabbits Island", next: "islandA_repeat", condition: function(){ return state.helpedIslandA; } },
-          { text: "Proceed to the Final Celebration", next: "final", condition: function(){ return state.helpedIslandA && state.helpedIslandB; } }
+          { text: "Solve the Riddle of the Shimmering Carrot", next: "rabbits_puzzle" },
+          { text: "Revive the Fading Rainbow", next: "rabbits_rainbow" },
+          { text: "Explore the Magical Garden", next: "rabbits_garden" },
+          { text: "Help Plan the Festival", next: "rabbits_festival", condition: () => state.rabbits.puzzle && state.rabbits.rainbow && state.rabbits.garden },
+          { text: "Finish on this Island", next: "chooseNextStep_rabbits" }
         ]
       },
-      islandA_repeat: {
-        id: "islandA_repeat",
-        text: "Back on Rainbow Rabbits Island, the rabbits greet {playerName} with joyful smiles. 'The rainbows remain radiant, thanks to you!' they exclaim. There's nothing more to do here, so it's time to continue the adventure.",
+      rabbits_puzzle: {
+        id: "rabbits_puzzle",
+        text: "A group of young rabbits huddle around a mysterious stone engraved with a glowing riddle. They ask for your help. Do you attempt to solve it?",
         choices: [
-          { text: "Return to the Clouds", next: "chooseIsland" }
+          { text: "Yes, I will solve the riddle.", next: "rabbits_puzzle_success" },
+          { text: "No, I want to try something else.", next: "islandRabbits_intro" }
         ]
       },
-      // Cloud Cats Island branch
-      islandB: {
-        id: "islandB",
-        text: "Arriving at Cloud Cats Island, {playerName} finds the island cloaked in a mysterious fog. The wise Cloud Cats explain that their enchanted bell—used to summon gentle breezes—has lost its chime. With careful thought and a bit of daring, {playerName} helps the cats locate the hidden chime among the clouds. As the bell rings out, the fog lifts and sunlight bathes the island. A contented cat purrs, 'Our thanks, {playerName}. You’ve restored harmony to our home.'",
+      rabbits_puzzle_success: {
+        id: "rabbits_puzzle_success",
+        text: "Using your clever mind, you decipher the symbols and the stone bursts into radiant light. The rabbits cheer, 'Thank you, {playerName}!'",
+        onEnter: () => { state.rabbits.puzzle = true; },
         choices: [
-          { text: "Return to the Clouds", next: "afterIslandB" }
-        ],
-        onEnter: function() {
-          state.helpedIslandB = true;
-        }
-      },
-      afterIslandB: {
-        id: "afterIslandB",
-        text: "Riding back on the unicorn, {playerName} smiles at the memory of the Cloud Cats’ thanks. Yet the vast skies still call.",
-        choices: [
-          { text: "Visit the Rainbow Rabbits Island", next: "islandA", condition: function(){ return !state.helpedIslandA; } },
-          { text: "Revisit Cloud Cats Island", next: "islandB_repeat", condition: function(){ return state.helpedIslandB; } },
-          { text: "Proceed to the Final Celebration", next: "final", condition: function(){ return state.helpedIslandA && state.helpedIslandB; } }
+          { text: "Return to the island", next: "islandRabbits_intro" }
         ]
       },
-      islandB_repeat: {
-        id: "islandB_repeat",
-        text: "Returning to Cloud Cats Island, {playerName} finds the cats eager to greet you again. 'The winds still sing in gratitude!' they say. With nothing further to do, it's time to move on.",
+      rabbits_rainbow: {
+        id: "rabbits_rainbow",
+        text: "An elder rabbit shows you a rainbow losing its luster. Do you help restore its vibrant glow?",
         choices: [
-          { text: "Return to the Clouds", next: "chooseIsland" }
+          { text: "Yes, let's revive the rainbow.", next: "rabbits_rainbow_success" },
+          { text: "Maybe later.", next: "islandRabbits_intro" }
         ]
       },
-      // Final ending when both islands have been visited
-      final: {
-        id: "final",
-        text: "With both islands thriving and full of magic, the unicorn carries {playerName} to a grand sky‐festival where the Rainbow Rabbits and Cloud Cats celebrate together. The adventure fills {playerName} with joy and wonder. Finally, the unicorn takes {playerName} back home, leaving behind a world of happiness and endless possibilities.",
+      rabbits_rainbow_success: {
+        id: "rabbits_rainbow_success",
+        text: "You mix magical pigments from hidden pots, and the rainbow bursts back to life. The elder rabbit beams with gratitude.",
+        onEnter: () => { state.rabbits.rainbow = true; },
+        choices: [
+          { text: "Return to the island", next: "islandRabbits_intro" }
+        ]
+      },
+      rabbits_garden: {
+        id: "rabbits_garden",
+        text: "In a secret garden, a withering tree needs enchanted dew to thrive. Do you search for this magical substance?",
+        choices: [
+          { text: "Yes, search the blossoms for dew.", next: "rabbits_garden_success" },
+          { text: "No, return to the island.", next: "islandRabbits_intro" }
+        ]
+      },
+      rabbits_garden_success: {
+        id: "rabbits_garden_success",
+        text: "You collect sparkling dew droplets that rejuvenate the tree. The garden fills with joyful color.",
+        onEnter: () => { state.rabbits.garden = true; },
+        choices: [
+          { text: "Return to the island", next: "islandRabbits_intro" }
+        ]
+      },
+      rabbits_festival: {
+        id: "rabbits_festival",
+        text: "With all tasks complete, the rabbits invite you to help plan a grand festival. Together, you arrange games, music, and a feast under a vibrant sky.",
+        onEnter: () => { state.rabbits.festival = true; },
+        choices: [
+          { text: "Finish on Rainbow Rabbits Island", next: "chooseNextStep_rabbits" }
+        ]
+      },
+      chooseNextStep_rabbits: {
+        id: "chooseNextStep_rabbits",
+        text: "You've wrapped up your adventures on Rainbow Rabbits Island. What would you like to do next?",
+        choices: [
+          { text: "Visit Cloud Cats Island", next: "islandCats_intro" },
+          { text: "Head Home", next: "headHome" },
+          { text: "Revisit Rainbow Rabbits Island", next: "islandRabbits_intro" }
+        ]
+      },
+      
+      // –––––––––––––––––––––––––––––––––––––––––––––––
+      // Cloud Cats Island Branch
+      // –––––––––––––––––––––––––––––––––––––––––––––––
+      islandCats_intro: {
+        id: "islandCats_intro",
+        text: "Welcome to Cloud Cats Island! The clever cats have challenges that need your aid. What adventure calls to you?",
+        choices: [
+          { text: "Chase the Mysterious Shadow", next: "cats_chase" },
+          { text: "Uncover the Secret of the Whispering Winds", next: "cats_secret" },
+          { text: "Rescue the Stranded Kitten", next: "cats_rescue" },
+          { text: "Help Plan the Festival", next: "cats_festival", condition: () => state.cats.chase && state.cats.secret && state.cats.rescue },
+          { text: "Finish on this Island", next: "chooseNextStep_cats" }
+        ]
+      },
+      cats_chase: {
+        id: "cats_chase",
+        text: "A fleet of cats is in pursuit of a mysterious shadow flickering among the clouds. Do you join the chase?",
+        choices: [
+          { text: "Yes, chase the shadow!", next: "cats_chase_success" },
+          { text: "No, return to the island.", next: "islandCats_intro" }
+        ]
+      },
+      cats_chase_success: {
+        id: "cats_chase_success",
+        text: "Your swift actions reveal the shadow to be a playful cascade of ribbons. The cats purr in delight at your success.",
+        onEnter: () => { state.cats.chase = true; },
+        choices: [
+          { text: "Return to Cloud Cats Island", next: "islandCats_intro" }
+        ]
+      },
+      cats_secret: {
+        id: "cats_secret",
+        text: "A soft whisper on the wind hints at a secret hidden in the island’s alleys. Do you follow the sound?",
+        choices: [
+          { text: "Yes, listen and follow.", next: "cats_secret_success" },
+          { text: "No, return to the island.", next: "islandCats_intro" }
+        ]
+      },
+      cats_secret_success: {
+        id: "cats_secret_success",
+        text: "Your attentive ears uncover a hidden message carried by the winds. The cats thank you for unveiling their secret.",
+        onEnter: () => { state.cats.secret = true; },
+        choices: [
+          { text: "Return to Cloud Cats Island", next: "islandCats_intro" }
+        ]
+      },
+      cats_rescue: {
+        id: "cats_rescue",
+        text: "A tiny kitten is stranded on a narrow ledge high above. Do you risk a rescue?",
+        choices: [
+          { text: "Yes, carefully rescue the kitten.", next: "cats_rescue_success" },
+          { text: "No, play it safe.", next: "islandCats_intro" }
+        ]
+      },
+      cats_rescue_success: {
+        id: "cats_rescue_success",
+        text: "With gentle care, you rescue the kitten. The island echoes with joyful meows and purrs of thanks.",
+        onEnter: () => { state.cats.rescue = true; },
+        choices: [
+          { text: "Return to Cloud Cats Island", next: "islandCats_intro" }
+        ]
+      },
+      cats_festival: {
+        id: "cats_festival",
+        text: "With your help on the other quests, the cats now prepare for a dazzling festival. You assist in arranging playful performances and treats that light up the sky.",
+        onEnter: () => { state.cats.festival = true; },
+        choices: [
+          { text: "Finish on Cloud Cats Island", next: "chooseNextStep_cats" }
+        ]
+      },
+      chooseNextStep_cats: {
+        id: "chooseNextStep_cats",
+        text: "You've completed your adventures on Cloud Cats Island. What's next?",
+        choices: [
+          { text: "Visit Rainbow Rabbits Island", next: "islandRabbits_intro" },
+          { text: "Head Home", next: "headHome" },
+          { text: "Revisit Cloud Cats Island", next: "islandCats_intro" }
+        ]
+      },
+      
+      // –––––––––––––––––––––––––––––––––––––––––––––––
+      // Heading Home and Endings
+      // –––––––––––––––––––––––––––––––––––––––––––––––
+      headHome: {
+        id: "headHome",
+        text: "You decide to head home. As the unicorn carries you away, a tug reminds you of the adventures still waiting among the clouds.",
+        choices: [
+          { text: "Turn back and continue exploring", next: "chooseIsland" },
+          { text: "Go home anyway (All adventures complete)", next: "final_complete", condition: () => state.rabbits.festival && state.cats.festival },
+          { text: "Go home anyway (Some adventures unfinished)", next: "final_incomplete", condition: () => !(state.rabbits.festival && state.cats.festival) }
+        ]
+      },
+      final_complete: {
+        id: "final_complete",
+        text: "All your adventures have blossomed into a grand festival across the islands. The unicorn gently lands you at home, and your heart is filled with wonder and joy. Congratulations, {playerName}!",
+        choices: [
+          { text: "Restart Adventure", next: "start" }
+        ]
+      },
+      final_incomplete: {
+        id: "final_incomplete",
+        text: "You return home with a wistful heart, knowing some adventures remain untold among the clouds. Perhaps another day you'll soar back, {playerName}.",
         choices: [
           { text: "Restart Adventure", next: "start" }
         ]
@@ -145,7 +299,7 @@
       return text.replace(/{playerName}/g, state.playerName);
     }
 
-    // Text-to-Speech: speak the given text aloud (if supported)
+    // Text-to-Speech: reads the given text aloud (if supported)
     function speak(text) {
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(text);
@@ -159,67 +313,93 @@
     function renderScene(sceneId) {
       const scene = scenes[sceneId];
       const container = document.getElementById("game");
-      container.innerHTML = ""; // Clear previous content
-
-      // Run any onEnter logic (for example, setting flags)
+      container.innerHTML = "";
+      
+      // Add a global "Repeat Narration" button at the top.
+      const repeatBtn = document.createElement("button");
+      repeatBtn.id = "repeatBtn";
+      repeatBtn.textContent = "Repeat Narration";
+      repeatBtn.addEventListener("click", () => {
+        speak(currentSceneText);
+      });
+      container.appendChild(repeatBtn);
+      
+      // Execute any onEnter logic (for setting flags, etc.)
       if (scene.onEnter) {
         scene.onEnter();
       }
-
-      // Create and display the scene text (with any name replacements)
-      const sceneText = document.createElement("p");
-      sceneText.textContent = fillPlaceholders(scene.text);
-      container.appendChild(sceneText);
-
-      // Automatically read the text aloud
-      speak(sceneText.textContent);
-
-      // If the scene expects an input (like entering the player name)
+      
+      // Create and display the scene text (with name placeholders replaced)
+      const sceneTextElem = document.createElement("p");
+      sceneTextElem.textContent = fillPlaceholders(scene.text);
+      container.appendChild(sceneTextElem);
+      
+      // Save current text so the repeat button can re-read it.
+      currentSceneText = sceneTextElem.textContent;
+      speak(currentSceneText);
+      
+      // If the scene requires input (like entering a name)
       if (scene.input) {
         const inputField = document.createElement("input");
         inputField.type = "text";
         inputField.placeholder = "Enter your name";
         container.appendChild(inputField);
-
-        const submitButton = document.createElement("button");
-        submitButton.textContent = "Start Adventure";
-        submitButton.addEventListener("click", function() {
+        
+        const submitBtn = document.createElement("button");
+        submitBtn.textContent = "Start Adventure";
+        submitBtn.addEventListener("click", function() {
           const name = inputField.value.trim();
           if (name !== "") {
             state.playerName = name;
             renderScene(scene.next);
           }
         });
-        container.appendChild(submitButton);
+        container.appendChild(submitBtn);
       } 
-      // Otherwise, render choices (buttons)
+      // Otherwise, display each choice as a button with an accompanying "Listen" button.
       else if (scene.choices) {
-        scene.choices.forEach(function(choice) {
-          // If a condition is set for this choice, check it
+        scene.choices.forEach(choice => {
+          // If a condition is defined for the choice, only show it if the condition returns true.
           if (choice.condition && !choice.condition()) {
             return;
           }
+          const choiceContainer = document.createElement("div");
+          choiceContainer.className = "choice-container";
+          
           const btn = document.createElement("button");
           btn.textContent = choice.text;
-          btn.addEventListener("click", function() {
+          btn.addEventListener("click", () => {
             renderScene(choice.next);
           });
-          container.appendChild(btn);
+          choiceContainer.appendChild(btn);
+          
+          // Add a "microphone" (Listen) button next to each choice.
+          const micBtn = document.createElement("button");
+          micBtn.className = "mic";
+          micBtn.textContent = "Listen";
+          micBtn.addEventListener("click", (e) => {
+            // Prevent the main button’s click from firing.
+            e.stopPropagation();
+            speak(choice.text);
+          });
+          choiceContainer.appendChild(micBtn);
+          
+          container.appendChild(choiceContainer);
         });
       }
     }
 
-    // Start the game by rendering the "start" scene
+    // Start the adventure
     renderScene("start");
 
-    // Register a Service Worker for offline/PWA functionality
+    // Register a Service Worker for offline/PWA functionality.
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('sw.js')
-          .then(function(registration) {
+          .then(registration => {
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
           })
-          .catch(function(err) {
+          .catch(err => {
             console.log('ServiceWorker registration failed: ', err);
           });
       });
